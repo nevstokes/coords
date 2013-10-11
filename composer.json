@@ -1,0 +1,21 @@
+{
+	"name": "nevstokes/coords",
+	"authors": [
+		{
+			"name": "Nev Stokes",
+			"email": "mail@nevstokes.com",
+			"homepage": "http://nevstokes.com",
+			"role": "Developer"
+		}
+	],
+	"require": {
+		"php": ">=5.3",
+		"nevstokes/maths": "dev-master"
+	},
+	"require-dev": {
+		"phpunit/phpunit": "~3.7"
+	},
+	"autoload": {
+		"psr-0": {"NevStokes\\Coords": "src/"}
+	}
+}
