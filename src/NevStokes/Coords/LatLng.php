@@ -64,8 +64,9 @@ class LatLng
 	 * @param to a LatLng object to measure the surface distance to
 	 * @return the surface distance
 	 */
-	public function distance(LtnLng $to)
+	public function distance(LatLng $to)
 	{
+		// radius in km, assuming a spherical Earth
 		$er = 6366.707;
 
 		$latFrom = deg2rad($this->lat);
