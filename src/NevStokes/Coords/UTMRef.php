@@ -69,8 +69,10 @@ class UTMRef
 		$eSquared = $wgs84->ecc;
 		$ePrimeSquared = $eSquared / (1.0 - $eSquared);
 		$e1 = (1 - sqrt(1 - $eSquared)) / (1 + sqrt(1 - $eSquared));
+
 		$x = $this->easting - 500000.0;;
 		$y = $this->northing;
+
 		$zoneNumber = $this->lngZone;
 		$zoneLetter = $this->latZone;
 
@@ -82,8 +84,8 @@ class UTMRef
 		}
 
 		$m = $y / $UTM_F0;
-		$mu =
-		$m
+
+		$mu = $m
 			/ ($a
 			* (1.0
 				- $eSquared / 4.0
@@ -92,28 +94,26 @@ class UTMRef
 				* pow($eSquared, 3.0)
 				/ 256.0));
 
-		$phi1Rad =
-		$mu
+		$phi1Rad = $mu
 			+ (3.0 * $e1 / 2.0 - 27.0 * pow($e1, 3.0) / 32.0) * sin(2.0 * $mu)
 			+ (21.0 * $e1 * $e1 / 16.0 - 55.0 * pow($e1, 4.0) / 32.0)
 			* sin(4.0 * $mu)
 			+ (151.0 * pow($e1, 3.0) / 96.0) * sin(6.0 * $mu);
 
-		$n =
-		$a
-			/ sqrt(1.0 - $eSquared * sin($phi1Rad) * sin($phi1Rad));
+		$n = $a / sqrt(1.0 - $eSquared * sin($phi1Rad) * sin($phi1Rad));
+
 		$t = tan($phi1Rad) * tan($phi1Rad);
 		$c = $ePrimeSquared * cos($phi1Rad) * cos($phi1Rad);
-		$r =
-		$a
+
+		$r = $a
 			* (1.0 - $eSquared)
 			/ pow(
 			1.0 - $eSquared * sin($phi1Rad) * sin($phi1Rad),
 			1.5);
+
 		$d = $x / ($n * $UTM_F0);
 
-		$latitude = (
-		$phi1Rad
+		$latitude = ($phi1Rad
 			- ($n * tan($phi1Rad) / $r)
 			* ($d * $d / 2.0
 				- (5.0
@@ -132,8 +132,7 @@ class UTMRef
 				* pow($d, 6.0)
 				/ 720.0)) * (180.0 / pi());
 
-		$longitude = $longitudeOrigin + (
-		($d
+		$longitude = $longitudeOrigin + (($d
 			- (1.0 + 2.0 * $t + $c) * pow($d, 3.0) / 6.0
 			+ (5.0
 			- (2.0 * $c)

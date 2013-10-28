@@ -18,6 +18,8 @@
 
 namespace NevStokes\Coords;
 
+use NevStokes\Maths\Trig;
+
 /**
  *
  */
@@ -201,25 +203,35 @@ class LatLng
 	public function toOSRef()
 	{
 		$airy1830 = new ReferenceEllipsoid;
-		$OSGB_F0	= 0.9996012717;
-		$N0		 = -100000.0;
-		$E0		 = 400000.0;
-		$phi0	 = deg2rad(49.0);
-		$lambda0	= deg2rad(-2.0);
-		$a		= $airy1830->maj;
-		$b		= $airy1830->min;
+
+		$OSGB_F0  = 0.9996012717;
+		$N0	      = -100000.0;
+		$E0       = 400000.0;
+
+		$phi0     = deg2rad(49.0);
+		$lambda0  = deg2rad(-2.0);
+
+		$a        = $airy1830->maj;
+		$b        = $airy1830->min;
 		$eSquared = $airy1830->ecc;
-		$phi = deg2rad($this->lat);
-		$lambda = deg2rad($this->lng);
+
+		$phi      = deg2rad($this->lat);
+		$lambda   = deg2rad($this->lng);
+
+		$phiSinSquared = Trig::sinSquared($phi);
+		$phiTanSquared = Trig::tanSquared($phi);
+
 		$E = 0.0;
 		$N = 0.0;
 		$n = ($a - $b) / ($a + $b);
-		$v = $a * $OSGB_F0 * pow(1.0 - $eSquared * Trig::sinSquared($phi), -0.5);
-		$rho =
-		$a * $OSGB_F0 * (1.0 - $eSquared) * pow(1.0 - $eSquared * Trig::sinSquared($phi), -1.5);
+		$v = $a * $OSGB_F0 * pow(1.0 - $eSquared * $phiSinSquared, -0.5);
+
+		$rho = $a * $OSGB_F0 * (1.0 - $eSquared)
+			* pow(1.0 - $eSquared * $phiSinSquared, -1.5);
+
 		$etaSquared = ($v / $rho) - 1.0;
-		$M =
-		($b * $OSGB_F0)
+
+		$M = ($b * $OSGB_F0)
 			* (((1 + $n + ((5.0 / 4.0) * $n * $n) + ((5.0 / 4.0) * $n * $n * $n))
 			* ($phi - $phi0))
 			- (((3 * $n) + (3 * $n * $n) + ((21.0 / 8.0) * $n * $n * $n))
@@ -231,36 +243,37 @@ class LatLng
 			- (((35.0 / 24.0) * $n * $n * $n)
 				* sin(3.0 * ($phi - $phi0))
 				* cos(3.0 * ($phi + $phi0))));
+
 		$I = $M + $N0;
 		$II = ($v / 2.0) * sin($phi) * cos($phi);
-		$III =
-		($v / 24.0)
+
+		$III = ($v / 24.0)
 			* sin($phi)
 			* pow(cos($phi), 3.0)
-			* (5.0 - Trig::tanSquared($phi) + (9.0 * $etaSquared));
-		$IIIA =
-		($v / 720.0)
+			* (5.0 - $phiTanSquared + (9.0 * $etaSquared));
+
+		$IIIA = ($v / 720.0)
 			* sin($phi)
 			* pow(cos($phi), 5.0)
-			* (61.0 - (58.0 * Trig::tanSquared($phi)) + pow(tan($phi), 4.0));
+			* (61.0 - (58.0 * $phiTanSquared) + pow(tan($phi), 4.0));
+
 		$IV = $v * cos($phi);
-		$V = ($v / 6.0) * pow(cos($phi), 3.0) * (($v / $rho) - Trig::tanSquared($phi));
-		$VI =
-		($v / 120.0)
+		$V = ($v / 6.0) * pow(cos($phi), 3.0) * (($v / $rho) - $phiTanSquared);
+
+		$VI = ($v / 120.0)
 			* pow(cos($phi), 5.0)
 			* (5.0
-			- (18.0 * Trig::tanSquared($phi))
+			- (18.0 * $phiTanSquared)
 			+ (pow(tan($phi), 4.0))
 			+ (14 * $etaSquared)
-			- (58 * Trig::tanSquared($phi) * $etaSquared));
+			- (58 * $phiTanSquared * $etaSquared));
 
-		$N =
-		$I
+		$N = $I
 			+ ($II * pow($lambda - $lambda0, 2.0))
 			+ ($III * pow($lambda - $lambda0, 4.0))
 			+ ($IIIA * pow($lambda - $lambda0, 6.0));
-		$E =
-		$E0
+
+		$E = $E0
 			+ ($IV * ($lambda - $lambda0))
 			+ ($V * pow($lambda - $lambda0, 3.0))
 			+ ($VI * pow($lambda - $lambda0, 5.0));
@@ -321,8 +334,7 @@ class LatLng
 		$c = $ePrimeSquared * cos($latitudeRad) * cos($latitudeRad);
 		$A = cos($latitudeRad) * ($longitudeRad - $longitudeOriginRad);
 
-		$M =
-		$a
+		$M = $a
 			* ((1
 			- $eSquared / 4
 			- 3 * $eSquared * $eSquared / 64
@@ -338,8 +350,7 @@ class LatLng
 			- (35 * $eSquared * $eSquared * $eSquared / 3072)
 				* sin(6 * $latitudeRad));
 
-		$UTMEasting =
-		(double) ($UTM_F0
+		$UTMEasting = (double) ($UTM_F0
 			* $n
 			* ($A
 			+ (1 - $t + $c) * pow($A, 3.0) / 6
@@ -348,8 +359,7 @@ class LatLng
 				/ 120)
 			+ 500000.0);
 
-		$UTMNorthing =
-		(double) ($UTM_F0
+		$UTMNorthing = (double) ($UTM_F0
 			* ($M
 			+ $n
 				* tan($latitudeRad)
@@ -375,26 +385,86 @@ class LatLng
 	 */
 	public function getUTMLatitudeZoneLetter($latitude)
 	{
-		if ((84 >= $latitude) && ($latitude >=  72)) return 'X';
-		if (( 72 > $latitude) && ($latitude >=  64)) return 'W';
-		if (( 64 > $latitude) && ($latitude >=  56)) return 'V';
-		if (( 56 > $latitude) && ($latitude >=  48)) return 'U';
-		if (( 48 > $latitude) && ($latitude >=  40)) return 'T';
-		if (( 40 > $latitude) && ($latitude >=  32)) return 'S';
-		if (( 32 > $latitude) && ($latitude >=  24)) return 'R';
-		if (( 24 > $latitude) && ($latitude >=  16)) return 'Q';
-		if (( 16 > $latitude) && ($latitude >=   8)) return 'P';
-		if ((  8 > $latitude) && ($latitude >=   0)) return 'N';
-		if ((  0 > $latitude) && ($latitude >=  -8)) return 'M';
-		if (( -8 > $latitude) && ($latitude >= -16)) return 'L';
-		if ((-16 > $latitude) && ($latitude >= -24)) return 'K';
-		if ((-24 > $latitude) && ($latitude >= -32)) return 'J';
-		if ((-32 > $latitude) && ($latitude >= -40)) return 'H';
-		if ((-40 > $latitude) && ($latitude >= -48)) return 'G';
-		if ((-48 > $latitude) && ($latitude >= -56)) return 'F';
-		if ((-56 > $latitude) && ($latitude >= -64)) return 'E';
-		if ((-64 > $latitude) && ($latitude >= -72)) return 'D';
-		if ((-72 > $latitude) && ($latitude >= -80)) return 'C';
+		if ((84 >= $latitude) && ($latitude >=  72)) {
+			return 'X';
+		}
+
+		if (( 72 > $latitude) && ($latitude >=  64)) {
+			return 'W';
+		}
+
+		if (( 64 > $latitude) && ($latitude >=  56)) {
+			return 'V';
+		}
+
+		if (( 56 > $latitude) && ($latitude >=  48)) {
+			return 'U';
+		}
+
+		if (( 48 > $latitude) && ($latitude >=  40)) {
+			return 'T';
+		}
+
+		if (( 40 > $latitude) && ($latitude >=  32)) {
+			return 'S';
+		}
+
+		if (( 32 > $latitude) && ($latitude >=  24)) {
+			return 'R';
+		}
+
+		if (( 24 > $latitude) && ($latitude >=  16)) {
+			return 'Q';
+		}
+
+		if (( 16 > $latitude) && ($latitude >=   8)) {
+			return 'P';
+		}
+
+		if ((  8 > $latitude) && ($latitude >=   0)) {
+			return 'N';
+		}
+
+		if ((  0 > $latitude) && ($latitude >=  -8)) {
+			return 'M';
+		}
+
+		if (( -8 > $latitude) && ($latitude >= -16)) {
+			return 'L';
+		}
+
+		if ((-16 > $latitude) && ($latitude >= -24)) {
+			return 'K';
+		}
+
+		if ((-24 > $latitude) && ($latitude >= -32)) {
+			return 'J';
+		}
+
+		if ((-32 > $latitude) && ($latitude >= -40)) {
+			return 'H';
+		}
+
+		if ((-40 > $latitude) && ($latitude >= -48)) {
+			return 'G';
+		}
+
+		if ((-48 > $latitude) && ($latitude >= -56)) {
+			return 'F';
+		}
+
+		if ((-56 > $latitude) && ($latitude >= -64)) {
+			return 'E';
+		}
+
+		if ((-64 > $latitude) && ($latitude >= -72)) {
+			return 'D';
+		}
+
+		if ((-72 > $latitude) && ($latitude >= -80)) {
+			return 'C';
+		}
+
 		return 'Z';
 	}
 }

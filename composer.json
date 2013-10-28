@@ -6,8 +6,14 @@
 			"email": "mail@nevstokes.com",
 			"homepage": "http://nevstokes.com",
 			"role": "Developer"
+		}, {
+			"name": "Jonathan Stott",
+			"email": "jonathan@jstott.me.uk",
+			"homepage": "http://www.jstott.me.uk/phpcoord/",
+			"role": "Developer"
 		}
 	],
+	"license": "GPL-2.0",
 	"require": {
 		"php": ">=5.3",
 		"nevstokes/maths": "dev-master"

@@ -17,6 +17,7 @@
  */
 
 namespace NevStokes\Coords;
+
 use NevStokes\Maths\Trig;
 
 /**
@@ -24,7 +25,16 @@ use NevStokes\Maths\Trig;
  */
 class OSRef
 {
+	/**
+	 * [$easting description]
+	 * @var [type]
+	 */
 	public $easting;
+
+	/**
+	 * [$northing description]
+	 * @var [type]
+	 */
 	public $northing;
 
 	/**
@@ -83,7 +93,7 @@ class OSRef
 
 			case 'O':
 				$north += 500000;
-				$east	+= 500000;
+				$east  += 500000;
 				break;
 
 			case 'T':
@@ -113,7 +123,7 @@ class OSRef
 	 */
 	public function __toString()
 	{
-		return "(" . $this->easting . ", " . $this->northing . ")";
+		return '(' . $this->easting . ', ' . $this->northing . ')';
 	}
 
 	/**
@@ -147,7 +157,7 @@ class OSRef
 		$e = round(($this->easting - (100000 * $hundredkmE)) / 100);
 		$n = round(($this->northing - (100000 * $hundredkmN)) / 100);
 
-		return sprintf("%s%s%03d%03d", $firstLetter, $secondLetter, $e, $n);
+		return sprintf('%s%s%03d%03d', $firstLetter, $secondLetter, $e, $n);
 	}
 
 	/**
@@ -158,81 +168,90 @@ class OSRef
 	function toLatLng()
 	{
 		$airy1830 = new ReferenceEllipsoid;
-		$OSGB_F0	= 0.9996012717;
-		$N0		 = -100000.0;
-		$E0		 = 400000.0;
-		$phi0	 = deg2rad(49.0);
-		$lambda0	= deg2rad(-2.0);
-		$a		= $airy1830->maj;
-		$b		= $airy1830->min;
+		$OSGB_F0  = 0.9996012717;
+		$N0       = -100000.0;
+		$E0       = 400000.0;
+		$phi0     = deg2rad(49.0);
+		$lambda0  = deg2rad(-2.0);
+		$a        = $airy1830->maj;
+		$b        = $airy1830->min;
 		$eSquared = $airy1830->ecc;
-		$phi		= 0.0;
-		$lambda	 = 0.0;
-		$E		= $this->easting;
-		$N		= $this->northing;
-		$n		= ($a - $b) / ($a + $b);
-		$M		= 0.0;
+		$phi      = 0.0;
+		$lambda   = 0.0;
+		$E        = $this->easting;
+		$N        = $this->northing;
+		$n        = ($a - $b) / ($a + $b);
+		$M        = 0.0;
 		$phiPrime = (($N - $N0) / ($a * $OSGB_F0)) + $phi0;
+
+		$phiPrimeSecant     = Trig::sec($phiPrime);
+		$phiPrimeSinSquared = Trig::sinSquared($phiPrime);
+		$phiPrimeTanSquared = Trig::tanSquared($phiPrime);
+
 		do {
-		$M =
-			($b * $OSGB_F0)
-			* (((1 + $n + ((5.0 / 4.0) * $n * $n) + ((5.0 / 4.0) * $n * $n * $n))
-				* ($phiPrime - $phi0))
-				- (((3 * $n) + (3 * $n * $n) + ((21.0 / 8.0) * $n * $n * $n))
-				* sin($phiPrime - $phi0)
-				* cos($phiPrime + $phi0))
-				+ ((((15.0 / 8.0) * $n * $n) + ((15.0 / 8.0) * $n * $n * $n))
-				* sin(2.0 * ($phiPrime - $phi0))
-				* cos(2.0 * ($phiPrime + $phi0)))
-				- (((35.0 / 24.0) * $n * $n * $n)
-				* sin(3.0 * ($phiPrime - $phi0))
-				* cos(3.0 * ($phiPrime + $phi0))));
-		$phiPrime += ($N - $N0 - $M) / ($a * $OSGB_F0);
+			$M =
+				($b * $OSGB_F0)
+				* (((1 + $n + ((5.0 / 4.0) * $n * $n) + ((5.0 / 4.0) * $n * $n * $n))
+					* ($phiPrime - $phi0))
+					- (((3 * $n) + (3 * $n * $n) + ((21.0 / 8.0) * $n * $n * $n))
+					* sin($phiPrime - $phi0)
+					* cos($phiPrime + $phi0))
+					+ ((((15.0 / 8.0) * $n * $n) + ((15.0 / 8.0) * $n * $n * $n))
+					* sin(2.0 * ($phiPrime - $phi0))
+					* cos(2.0 * ($phiPrime + $phi0)))
+					- (((35.0 / 24.0) * $n * $n * $n)
+					* sin(3.0 * ($phiPrime - $phi0))
+					* cos(3.0 * ($phiPrime + $phi0))));
+			$phiPrime += ($N - $N0 - $M) / ($a * $OSGB_F0);
 		} while (($N - $N0 - $M) >= 0.001);
-		$v = $a * $OSGB_F0 * pow(1.0 - $eSquared * Trig::sinSquared($phiPrime), -0.5);
-		$rho =
-		$a
+
+		$v = $a * $OSGB_F0 * pow(1.0 - $eSquared * $phiPrimeSinSquared, -0.5);
+
+		$rho = $a
 			* $OSGB_F0
 			* (1.0 - $eSquared)
-			* pow(1.0 - $eSquared * Trig::sinSquared($phiPrime), -1.5);
+			* pow(1.0 - $eSquared * $phiPrimeSinSquared, -1.5);
+
 		$etaSquared = ($v / $rho) - 1.0;
+
 		$VII = tan($phiPrime) / (2 * $rho * $v);
-		$VIII =
-		(tan($phiPrime) / (24.0 * $rho * pow($v, 3.0)))
+
+		$VIII = (tan($phiPrime) / (24.0 * $rho * pow($v, 3.0)))
 			* (5.0
-			+ (3.0 * Trig::tanSquared($phiPrime))
+			+ (3.0 * $phiPrimeTanSquared)
 			+ $etaSquared
-			- (9.0 * Trig::tanSquared($phiPrime) * $etaSquared));
-		$IX =
-		(tan($phiPrime) / (720.0 * $rho * pow($v, 5.0)))
+			- (9.0 * $phiPrimeTanSquared * $etaSquared));
+
+		$IX = (tan($phiPrime) / (720.0 * $rho * pow($v, 5.0)))
 			* (61.0
-			+ (90.0 * Trig::tanSquared($phiPrime))
-			+ (45.0 * Trig::tanSquared($phiPrime) * Trig::tanSquared($phiPrime)));
-		$X = Trig::secant($phiPrime) / $v;
-		$XI =
-		(Trig::secant($phiPrime) / (6.0 * $v * $v * $v))
-			* (($v / $rho) + (2 * Trig::tanSquared($phiPrime)));
-		$XII =
-		(Trig::secant($phiPrime) / (120.0 * pow($v, 5.0)))
+			+ (90.0 * $phiPrimeTanSquared)
+			+ (45.0 * $phiPrimeTanSquared * $phiPrimeTanSquared));
+
+		$X = $phiPrimeSecant / $v;
+
+		$XI = ($phiPrimeSecant / (6.0 * $v * $v * $v))
+			* (($v / $rho) + (2 * $phiPrimeTanSquared));
+
+		$XII = ($phiPrimeSecant / (120.0 * pow($v, 5.0)))
 			* (5.0
-			+ (28.0 * Trig::tanSquared($phiPrime))
-			+ (24.0 * Trig::tanSquared($phiPrime) * Trig::tanSquared($phiPrime)));
-		$XIIA =
-		(Trig::secant($phiPrime) / (5040.0 * pow($v, 7.0)))
+			+ (28.0 * $phiPrimeTanSquared)
+			+ (24.0 * $phiPrimeTanSquared * $phiPrimeTanSquared));
+
+		$XIIA = ($phiPrimeSecant / (5040.0 * pow($v, 7.0)))
 			* (61.0
-			+ (662.0 * Trig::tanSquared($phiPrime))
-			+ (1320.0 * Trig::tanSquared($phiPrime) * Trig::tanSquared($phiPrime))
+			+ (662.0 * $phiPrimeTanSquared)
+			+ (1320.0 * $phiPrimeTanSquared * $phiPrimeTanSquared)
 			+ (720.0
-				* Trig::tanSquared($phiPrime)
-				* Trig::tanSquared($phiPrime)
-				* Trig::tanSquared($phiPrime)));
-		$phi =
-		$phiPrime
+				* $phiPrimeTanSquared
+				* $phiPrimeTanSquared
+				* $phiPrimeTanSquared));
+
+		$phi = $phiPrime
 			- ($VII * pow($E - $E0, 2.0))
 			+ ($VIII * pow($E - $E0, 4.0))
 			- ($IX * pow($E - $E0, 6.0));
-		$lambda =
-		$lambda0
+
+		$lambda = $lambda0
 			+ ($X * ($E - $E0))
 			- ($XI * pow($E - $E0, 3.0))
 			+ ($XII * pow($E - $E0, 5.0))
